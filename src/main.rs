@@ -13,6 +13,8 @@ mod simulator;
 const DELAY_SAMPLES: usize = 23;
 /// How much does the simulator attenuates the signal. (applied as a multiplier to every sample)
 const ATTENUATION: f32 = 0.5;
+/// Signal to noise ratio of the simulated physical system.
+const SIGNAL_TO_NOISE_RATIO: f32 = 5.0;
 
 /// How wide a window to use when searching for the input signal in the output.
 const COMPARISON_WINDOW_WIDTH: usize = 50;
@@ -26,7 +28,7 @@ const MAX_EXPECTED_DELAY_SAMPLES: usize = DELAY_SAMPLES * 2;
 type Sample = f32;
 
 fn main() {
-    let mut simulator = CompositeSimulator::new(DELAY_SAMPLES, ATTENUATION);
+    let mut simulator = CompositeSimulator::new(DELAY_SAMPLES, ATTENUATION, SIGNAL_TO_NOISE_RATIO);
     let mut computer = SimpleComputer::new(MAX_EXPECTED_DELAY_SAMPLES, COMPARISON_WINDOW_WIDTH);
 
     loop {
