@@ -2,7 +2,7 @@ use std::{thread, time::Duration};
 
 use computer::{Computer, SimpleComputer};
 use ring_buffer::RingBuffer;
-use simulator::{DelaySimulator, Simulator};
+use simulator::{CompositeSimulator, Simulator};
 
 mod computer;
 mod ring_buffer;
@@ -11,6 +11,8 @@ mod simulator;
 /// By how many samples the simulator delays the produced input (as if coming from microphone)
 /// compared to the output (as if fed to speakers).
 const DELAY_SAMPLES: usize = 7;
+/// How much does the simulator attenuates the signal. (applied as a multiplier to every sample)
+const ATTENUATION: f32 = 0.5;
 
 /// How wide a window to use when searching for the input signal in the output.
 const COMPARISON_WINDOW_WIDTH: usize = 10;
@@ -24,7 +26,7 @@ const MAX_EXPECTED_DELAY_SAMPLES: usize = DELAY_SAMPLES * 2;
 type Sample = f32;
 
 fn main() {
-    let mut simulator = DelaySimulator::new(DELAY_SAMPLES);
+    let mut simulator = CompositeSimulator::new(DELAY_SAMPLES, ATTENUATION);
     let mut computer = SimpleComputer::new(MAX_EXPECTED_DELAY_SAMPLES, COMPARISON_WINDOW_WIDTH);
 
     loop {
