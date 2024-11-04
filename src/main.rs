@@ -10,12 +10,12 @@ mod simulator;
 
 /// By how many samples the simulator delays the produced input (as if coming from microphone)
 /// compared to the output (as if fed to speakers).
-const DELAY_SAMPLES: usize = 7;
+const DELAY_SAMPLES: usize = 23;
 /// How much does the simulator attenuates the signal. (applied as a multiplier to every sample)
 const ATTENUATION: f32 = 0.5;
 
 /// How wide a window to use when searching for the input signal in the output.
-const COMPARISON_WINDOW_WIDTH: usize = 10;
+const COMPARISON_WINDOW_WIDTH: usize = 50;
 /// For the purpose of the simulation we know this is in fact exactly DELAY_SAMPLES.
 /// In reality though we'll use some heuristic to estimate this based on the physical setup
 /// as well as the delay intrinsic to the digital part of the pipeline.

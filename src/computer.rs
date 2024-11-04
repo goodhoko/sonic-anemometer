@@ -1,3 +1,5 @@
+use std::ops::Sub;
+
 use rand::random;
 
 use crate::{ring_buffer::RingBuffer, Sample};
@@ -49,18 +51,29 @@ impl Computer for SimpleComputer {
             .checked_sub(self.input.len())
             .expect("we can't have less output samples than input ones");
 
+        // Find the phase shift that produced the minimum compound error.
+        // TODO: make this code nicer. Unfortunately f32 isn't Ord so we can't use Iterator::min().
+        let mut min_error = f32::MAX;
+        let mut corresponding_phase_shift = 0;
+
         for phase_shift_samples in 0..maximum_shift {
             let output_window = self.output.iter().skip(phase_shift_samples);
             let input_window = self.input.iter();
 
-            if output_window
+            // assert!(output_window.clone().count() >= input_window.clone().count());
+
+            let error = output_window
                 .zip(input_window)
-                .all(|(output_sample, input_sample)| output_sample == input_sample)
-            {
-                return Some(maximum_shift - phase_shift_samples + 1);
+                .fold(0.0, |acc, (output_sample, input_sample)| {
+                    acc + output_sample.sub(input_sample).abs()
+                });
+
+            if error < min_error {
+                min_error = error;
+                corresponding_phase_shift = phase_shift_samples;
             }
         }
 
-        None
+        Some(maximum_shift - corresponding_phase_shift + 1)
     }
 }
