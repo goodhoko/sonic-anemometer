@@ -1,12 +1,9 @@
 use std::{thread, time::Duration};
 
-use computer::{Computer, SimpleComputer};
-use ring_buffer::RingBuffer;
-use simulator::Simulator;
-
-mod computer;
-mod ring_buffer;
-mod simulator;
+use audio_anemometer::{
+    computer::{Computer, SimpleComputer},
+    simulator::Simulator,
+};
 
 /// By how many samples the simulator delays the produced input (as if coming from microphone)
 /// compared to the output (as if fed to speakers).
@@ -24,8 +21,6 @@ const COMPARISON_WINDOW_WIDTH: usize = 50;
 /// This controls how long into history of the played output we look to find just received input.
 /// Used as a cap for compute and memory usage.
 const MAX_EXPECTED_DELAY_SAMPLES: usize = DELAY_SAMPLES * 2;
-
-type Sample = f32;
 
 fn main() {
     let mut simulator = Simulator::new(DELAY_SAMPLES, ATTENUATION, SIGNAL_TO_NOISE_RATIO);

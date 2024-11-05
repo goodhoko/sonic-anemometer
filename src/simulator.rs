@@ -1,6 +1,6 @@
 use rand::random;
 
-use crate::{RingBuffer, Sample};
+use crate::{ring_buffer::RingBuffer, Sample};
 
 pub struct Simulator {
     delay_buffer: RingBuffer<Sample>,

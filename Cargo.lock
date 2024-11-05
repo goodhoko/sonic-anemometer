@@ -3,7 +3,7 @@
 version = 3
 
 [[package]]
-name = "audio-anemometer"
+name = "audio_anemometer"
 version = "0.1.0"
 dependencies = [
  "rand",
