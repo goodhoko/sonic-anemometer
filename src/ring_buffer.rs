@@ -7,6 +7,8 @@ pub struct RingBuffer<T> {
 
 impl<T> RingBuffer<T> {
     pub fn new(length: usize) -> Self {
+        assert!(length > 0, "ring buffer must have non-zero length");
+
         Self {
             length,
             inner: VecDeque::with_capacity(length),

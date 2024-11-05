@@ -3,32 +3,38 @@ use rand::random;
 use crate::{ring_buffer::RingBuffer, Sample};
 
 pub struct Simulator {
-    delay_buffer: RingBuffer<Sample>,
+    delay_buffer: Option<RingBuffer<Sample>>,
     attenuation: f32,
     signal_to_noise_ratio: f32,
 }
 
 impl Simulator {
     pub fn new(delay_samples: usize, attenuation: f32, signal_to_noise_ratio: f32) -> Self {
+        let delay_buffer = if delay_samples > 0 {
+            Some(RingBuffer::new(delay_samples))
+        } else {
+            None
+        };
+
         Self {
-            delay_buffer: RingBuffer::new(delay_samples),
+            delay_buffer,
             attenuation,
             signal_to_noise_ratio,
         }
     }
 
-    pub fn tick(&mut self, sample: Sample) -> Sample {
-        let output = if self.delay_buffer.is_full() {
-            *self
-                .delay_buffer
-                .iter()
-                .next()
-                .expect("we just checked it's full")
-        } else {
-            0.0
+    pub fn tick(&mut self, input: Sample) -> Sample {
+        let output = match &mut self.delay_buffer.as_mut() {
+            None => input,
+            Some(buffer) if buffer.is_full() => {
+                *buffer.iter().next().expect("we just checked it's full")
+            }
+            _ => 0.0,
         };
 
-        self.delay_buffer.push_back(sample);
+        if let Some(buffer) = self.delay_buffer.as_mut() {
+            buffer.push_back(input);
+        }
 
         let noise = random::<f32>() / self.signal_to_noise_ratio;
 
