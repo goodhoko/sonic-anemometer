@@ -3,4 +3,4 @@ pub mod simulator;
 
 mod ring_buffer;
 
-type Sample = f32;
+pub type Sample = f32;
