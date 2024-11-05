@@ -2,7 +2,7 @@ use std::{thread, time::Duration};
 
 use computer::{Computer, SimpleComputer};
 use ring_buffer::RingBuffer;
-use simulator::{CompositeSimulator, Simulator};
+use simulator::Simulator;
 
 mod computer;
 mod ring_buffer;
@@ -28,16 +28,12 @@ const MAX_EXPECTED_DELAY_SAMPLES: usize = DELAY_SAMPLES * 2;
 type Sample = f32;
 
 fn main() {
-    let mut simulator = CompositeSimulator::new(DELAY_SAMPLES, ATTENUATION, SIGNAL_TO_NOISE_RATIO);
+    let mut simulator = Simulator::new(DELAY_SAMPLES, ATTENUATION, SIGNAL_TO_NOISE_RATIO);
     let mut computer = SimpleComputer::new(MAX_EXPECTED_DELAY_SAMPLES, COMPARISON_WINDOW_WIDTH);
 
     loop {
-        // playback
         let output_sample = computer.output_sample();
-        simulator.play_sample(output_sample);
-
-        // recording
-        let input_sample = simulator.acquire_sample();
+        let input_sample = simulator.tick(output_sample);
         computer.record_sample(input_sample);
 
         let delay = computer.delay();
