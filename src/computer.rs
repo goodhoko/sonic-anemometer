@@ -74,6 +74,6 @@ impl Computer for SimpleComputer {
             }
         }
 
-        Some(maximum_shift - corresponding_phase_shift + 1)
+        Some(maximum_shift - corresponding_phase_shift)
     }
 }

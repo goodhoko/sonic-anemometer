@@ -18,8 +18,6 @@ impl Simulator {
     }
 
     pub fn tick(&mut self, sample: Sample) -> Sample {
-        self.delay_buffer.push_back(sample);
-
         let output = if self.delay_buffer.is_full() {
             *self
                 .delay_buffer
@@ -29,6 +27,8 @@ impl Simulator {
         } else {
             0.0
         };
+
+        self.delay_buffer.push_back(sample);
 
         let noise = random::<f32>() / self.signal_to_noise_ratio;
 
