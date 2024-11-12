@@ -8,6 +8,7 @@ pub trait Computer {
     fn delay(&self) -> Option<usize>;
 }
 
+#[derive(Debug, Clone)]
 pub struct SimpleComputer {
     output: RingBuffer<Sample>,
     input: RingBuffer<Sample>,

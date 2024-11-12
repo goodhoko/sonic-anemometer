@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+#[derive(Debug, Clone)]
 pub struct RingBuffer<T> {
     length: usize,
     inner: VecDeque<T>,
