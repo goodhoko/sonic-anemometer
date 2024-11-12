@@ -26,6 +26,16 @@ pub fn single_sample_loopback(c: &mut Criterion) {
     });
 }
 
+pub fn delay(c: &mut Criterion) {
+    c.bench_function("single sample loopback and delay", |b| {
+        let computer = setup_computer(MAX_EXPECTED_DELAY_SAMPLES, COMPARISON_WINDOW_WIDTH);
+
+        b.iter(|| {
+            computer.delay();
+        })
+    });
+}
+
 /// Construct SimpleComputer and run it until its internal buffers are fully populated.
 fn setup_computer(
     maximum_expected_delay_samples: usize,
@@ -43,6 +53,7 @@ fn setup_computer(
 criterion_group!(
     benches,
     single_sample_loopback,
-    single_sample_loopback_and_delay
+    single_sample_loopback_and_delay,
+    delay,
 );
 criterion_main!(benches);
