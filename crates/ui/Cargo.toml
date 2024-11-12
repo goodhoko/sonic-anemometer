@@ -5,3 +5,9 @@ edition = "2021"
 
 [dependencies]
 audio_anemometer = { version = "0.1", path = "../computer" }
+encase = { version = "0.10.0", features = ["glam"] }
+glam = "0.29.2"
+wgpu = "23.0.0"
+winit = { version = "0.29" }
+env_logger = "0.11"
+pollster = "0.3"
