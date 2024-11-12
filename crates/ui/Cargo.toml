@@ -4,3 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+audio_anemometer = { version = "0.1", path = "../computer" }
