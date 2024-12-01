@@ -1,0 +1,2 @@
+# Don't show diff of this file by default. Pass `--text` to `git diff` to see it.
+Cargo.lock -diff linguist-generated=true
