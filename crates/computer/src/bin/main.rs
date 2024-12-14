@@ -1,9 +1,6 @@
 use std::{thread, time::Duration};
 
-use audio_anemometer::{
-    computer::{Computer, SimpleComputer},
-    simulator::Simulator,
-};
+use audio_anemometer::{computer::Computer, simulator::Simulator};
 
 /// By how many samples the simulator delays the produced input (as if coming from microphone)
 /// compared to the output (as if fed to speakers).
@@ -24,7 +21,7 @@ const MAX_EXPECTED_DELAY_SAMPLES: usize = DELAY_SAMPLES * 2;
 
 fn main() {
     let mut simulator = Simulator::new(DELAY_SAMPLES, ATTENUATION, SIGNAL_TO_NOISE_RATIO);
-    let mut computer = SimpleComputer::new(MAX_EXPECTED_DELAY_SAMPLES, COMPARISON_WINDOW_WIDTH);
+    let mut computer = Computer::new(MAX_EXPECTED_DELAY_SAMPLES, COMPARISON_WINDOW_WIDTH);
 
     loop {
         let output_sample = computer.output_sample();

@@ -1,4 +1,4 @@
-use audio_anemometer::computer::{Computer, SimpleComputer};
+use audio_anemometer::computer::Computer;
 use criterion::{criterion_group, criterion_main, Criterion};
 
 const MAX_EXPECTED_DELAY_SAMPLES: usize = 2048;
@@ -40,8 +40,8 @@ pub fn delay(c: &mut Criterion) {
 fn setup_computer(
     maximum_expected_delay_samples: usize,
     comparison_window_width: usize,
-) -> SimpleComputer {
-    let mut computer = SimpleComputer::new(maximum_expected_delay_samples, comparison_window_width);
+) -> Computer {
+    let mut computer = Computer::new(maximum_expected_delay_samples, comparison_window_width);
     for _ in 0..(maximum_expected_delay_samples + comparison_window_width) {
         let sample = computer.output_sample();
         computer.record_sample(sample);

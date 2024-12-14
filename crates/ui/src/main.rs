@@ -5,15 +5,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use audio_anemometer::{
-    computer::{Computer, SimpleComputer},
-    simulator::Simulator,
-};
+use audio_anemometer::{computer::Computer, simulator::Simulator};
 
 use winit::{
-    event::{Event, KeyEvent, WindowEvent},
+    event::{Event, WindowEvent},
     event_loop::EventLoop,
-    keyboard::{Key, NamedKey},
     window::Window,
 };
 
@@ -31,7 +27,7 @@ fn main() {
         ATTENUATION,
         SIGNAL_TO_NOISE_RATIO,
     )));
-    let computer = Arc::new(RwLock::new(SimpleComputer::new(
+    let computer = Arc::new(RwLock::new(Computer::new(
         MAX_EXPECTED_DELAY_SAMPLES,
         COMPARISON_WINDOW_WIDTH,
     )));
@@ -44,7 +40,7 @@ fn main() {
 
 /// Spawn a thread that advances the simulator and the computer.
 fn spawn_audio_pipeline_simulation(
-    computer: &Arc<RwLock<SimpleComputer>>,
+    computer: &Arc<RwLock<Computer>>,
     simulator: &Arc<RwLock<Simulator>>,
 ) {
     let computer = Arc::clone(computer);
@@ -80,7 +76,7 @@ fn spawn_audio_pipeline_simulation(
 //   - ask for another redraw
 //
 // - on certain key press change the params of the simulator (delay, signal2noise ration, attenuation)
-fn run_gui(computer: Arc<RwLock<SimpleComputer>>) {
+fn run_gui(_computer: Arc<RwLock<Computer>>) {
     let event_loop = EventLoop::new().unwrap();
     let window = winit::window::WindowBuilder::new()
         .with_title("Audio-anemometer Visualization")
@@ -226,7 +222,7 @@ async fn run(event_loop: EventLoop<()>, window: Window) {
 }
 
 #[expect(unused)]
-fn run_tui(computer: Arc<RwLock<SimpleComputer>>) {
+fn run_tui(computer: Arc<RwLock<Computer>>) {
     let mut accumulated_delay = 0;
     let mut delays = 0;
     let mut last_report = Instant::now();

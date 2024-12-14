@@ -2,19 +2,13 @@ use rand::random;
 
 use crate::{ring_buffer::RingBuffer, Sample};
 
-pub trait Computer {
-    fn output_sample(&mut self) -> Sample;
-    fn record_sample(&mut self, sample: Sample);
-    fn delay(&self) -> Option<usize>;
-}
-
 #[derive(Debug, Clone)]
-pub struct SimpleComputer {
+pub struct Computer {
     output: RingBuffer<Sample>,
     input: RingBuffer<Sample>,
 }
 
-impl SimpleComputer {
+impl Computer {
     pub fn new(maximum_expected_delay_samples: usize, comparison_window_width: usize) -> Self {
         Self {
             output: RingBuffer::new(maximum_expected_delay_samples + comparison_window_width),
@@ -22,23 +16,17 @@ impl SimpleComputer {
         }
     }
 
-    fn random_sample(&mut self) -> Sample {
-        random()
-    }
-}
-
-impl Computer for SimpleComputer {
-    fn output_sample(&mut self) -> Sample {
-        let sample = self.random_sample();
+    pub fn output_sample(&mut self) -> Sample {
+        let sample = random();
         self.output.push_back(sample);
         sample
     }
 
-    fn record_sample(&mut self, sample: Sample) {
+    pub fn record_sample(&mut self, sample: Sample) {
         self.input.push_back(sample);
     }
 
-    fn delay(&self) -> Option<usize> {
+    pub fn delay(&self) -> Option<usize> {
         if !self.input.is_full() {
             // We haven't yet accumulated enough input samples. We'll need to wait bit more.
             return None;
