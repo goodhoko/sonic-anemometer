@@ -197,6 +197,11 @@ async fn run(
         .unwrap();
     surface.configure(&device, &config);
 
+    println!("Use keys to tweak simulator params:");
+    println!("A/S to increase/decrease attenuation");
+    println!("D/F to increase/decrease delay");
+    println!("N/M to decrease/increase signal to noise ratio");
+
     let window = &window;
     let res = event_loop.run(move |event, target| {
         // Have the closure take ownership of the resources.
