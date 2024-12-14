@@ -11,8 +11,8 @@ use crate::{computer::Computer, ring_buffer::RingBuffer, Sample};
 #[derive(Debug)]
 pub struct Simulator {
     delay_buffer: Option<RingBuffer<Sample>>,
-    attenuation: f32,
-    signal_to_noise_ratio: f32,
+    pub attenuation: f32,
+    pub signal_to_noise_ratio: f32,
 }
 
 impl Simulator {

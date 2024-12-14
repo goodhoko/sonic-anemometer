@@ -13,7 +13,7 @@ use wgpu::{
     Extent3d, Instance, PrimitiveTopology, ShaderStages, Texture, TextureView,
 };
 use winit::{
-    event::{Event, WindowEvent},
+    event::{Event, KeyEvent, WindowEvent},
     event_loop::EventLoop,
     window::Window,
 };
@@ -46,10 +46,15 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
-    pollster::block_on(run(event_loop, window, computer));
+    pollster::block_on(run(event_loop, window, computer, simulator));
 }
 
-async fn run(event_loop: EventLoop<()>, window: Window, computer: Arc<RwLock<Computer>>) {
+async fn run(
+    event_loop: EventLoop<()>,
+    window: Window,
+    computer: Arc<RwLock<Computer>>,
+    simulator: Arc<RwLock<Simulator>>,
+) {
     let mut size = window.inner_size();
     size.width = size.width.max(1);
     size.height = size.height.max(1);
@@ -213,6 +218,32 @@ async fn run(event_loop: EventLoop<()>, window: Window, computer: Arc<RwLock<Com
                 config.width = new_size.width.max(1);
                 config.height = new_size.height.max(1);
                 surface.configure(&device, &config);
+            }
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        text: Some(pressed_str),
+                        ..
+                    },
+                ..
+            } => {
+                if pressed_str == "a" {
+                    let mut simulator = simulator.write().unwrap();
+                    simulator.attenuation *= 1.1;
+                    println!("attenuation: {}", simulator.attenuation);
+                } else if pressed_str == "s" {
+                    let mut simulator = simulator.write().unwrap();
+                    simulator.attenuation *= 0.9;
+                    println!("attenuation: {}", simulator.attenuation);
+                } else if pressed_str == "n" {
+                    let mut simulator = simulator.write().unwrap();
+                    simulator.signal_to_noise_ratio *= 0.9;
+                    println!("signal to noise ratio: {}", simulator.signal_to_noise_ratio);
+                } else if pressed_str == "m" {
+                    let mut simulator = simulator.write().unwrap();
+                    simulator.signal_to_noise_ratio *= 1.1;
+                    println!("signal to noise ratio: {}", simulator.signal_to_noise_ratio);
+                }
             }
             WindowEvent::RedrawRequested => {
                 let computer = computer.read().unwrap().deref().clone();
