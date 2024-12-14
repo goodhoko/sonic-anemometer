@@ -46,8 +46,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let difference = abs(ver - hor);
     var color = vec3(-log(difference) / 10.0);
 
+    // TODO: make this line exactly one pixel wide.
     let on_delay_line = abs(in.tex_coords.x - computed_delay_samples) < 0.001;
-
     if on_delay_line {
         color.r = 1.0;
     }
