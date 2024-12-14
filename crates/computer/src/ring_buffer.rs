@@ -1,31 +1,40 @@
 use std::collections::VecDeque;
 
+/// Un-growable ring buffer backed by VecDeque.
+/// When full, pushed-back elements pop out elements from the front.
 #[derive(Debug, Clone)]
 pub struct RingBuffer<T> {
-    length: usize,
+    capacity: usize,
     inner: VecDeque<T>,
 }
 
 impl<T> RingBuffer<T> {
-    pub fn new(length: usize) -> Self {
-        assert!(length > 0, "ring buffer must have non-zero length");
+    /// Construct new RingBuffer with given capacity. Panic when capacity is 0.
+    pub fn new(capacity: usize) -> Self {
+        assert!(capacity > 0, "ring buffer must have non-zero length");
 
         Self {
-            length,
-            inner: VecDeque::with_capacity(length),
+            capacity,
+            inner: VecDeque::with_capacity(capacity),
         }
     }
 
-    pub fn push_back(&mut self, sample: T) {
-        while self.inner.len() >= self.length {
-            self.inner.pop_front();
+    /// Push a single element to the back of the buffer. If the buffer is full, pop the front-most
+    /// element and return it.
+    pub fn push_back(&mut self, sample: T) -> Option<T> {
+        if self.inner.len() < self.capacity {
+            self.inner.push_back(sample);
+            return None;
         }
+
+        let front_element = self
+            .inner
+            .pop_front()
+            .expect("self.capacity can't be 0 and we checked we are full");
 
         self.inner.push_back(sample);
-    }
 
-    pub fn capacity(&self) -> usize {
-        self.length
+        Some(front_element)
     }
 
     pub fn len(&self) -> usize {
@@ -33,7 +42,7 @@ impl<T> RingBuffer<T> {
     }
 
     pub fn is_full(&self) -> bool {
-        self.inner.len() == self.capacity()
+        self.inner.len() == self.capacity
     }
 
     pub fn iter(&self) -> std::collections::vec_deque::Iter<'_, T> {
