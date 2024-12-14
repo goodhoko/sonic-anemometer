@@ -1,3 +1,13 @@
 {
-  "cSpell.words": ["Deque", "swapchain", "WGPU", "WGSL", "winit"]
+  "cSpell.words": [
+    "Deque",
+    "multisample",
+    "multisampled",
+    "multiview",
+    "swapchain",
+    "webgl",
+    "WGPU",
+    "WGSL",
+    "winit"
+  ]
 }
