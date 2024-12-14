@@ -1,7 +1,14 @@
+use std::{
+    sync::{Arc, RwLock},
+    thread,
+    time::{Duration, Instant},
+};
+
 use rand::random;
 
-use crate::{ring_buffer::RingBuffer, Sample};
+use crate::{computer::Computer, ring_buffer::RingBuffer, Sample};
 
+#[derive(Debug)]
 pub struct Simulator {
     delay_buffer: Option<RingBuffer<Sample>>,
     attenuation: f32,
@@ -36,4 +43,32 @@ impl Simulator {
 
         output * self.attenuation + noise
     }
+}
+
+/// Spawn a thread that advances the simulator and the computer.
+pub fn simulate_audio_pipeline(
+    computer: &Arc<RwLock<Computer>>,
+    simulator: &Arc<RwLock<Simulator>>,
+) {
+    let computer = Arc::clone(computer);
+    let simulator = Arc::clone(simulator);
+
+    thread::spawn(move || {
+        let mut samples = 0;
+        let mut last_report = Instant::now();
+        loop {
+            let output_sample = computer.write().unwrap().output_sample();
+            let input_sample = simulator.write().unwrap().tick(output_sample);
+
+            computer.write().unwrap().record_sample(input_sample);
+
+            samples += 1;
+
+            if last_report.elapsed() > Duration::from_secs(1) {
+                println!("processed {samples} samples");
+                samples = 0;
+                last_report = Instant::now();
+            }
+        }
+    });
 }

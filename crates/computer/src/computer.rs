@@ -57,4 +57,12 @@ impl Computer {
 
         Some(maximum_shift - corresponding_phase_shift)
     }
+
+    pub fn input_buffer(&self) -> &RingBuffer<Sample> {
+        &self.input
+    }
+
+    pub fn output_buffer(&self) -> &RingBuffer<Sample> {
+        &self.output
+    }
 }
