@@ -31,13 +31,12 @@ impl Simulator {
     }
 
     pub fn tick(&mut self, input: Sample) -> Sample {
-        let Some(buffer) = self.delay_buffer.as_mut() else {
+        let output = match self.delay_buffer.as_mut() {
             // Delay is zero, let the sample just pass through.
-            return input;
+            None => input,
+            // Simulate silence while the buffer is filling up (and returning None).
+            Some(buffer) => buffer.push_back(input).unwrap_or(0.0),
         };
-
-        // Simulate silence while the buffer is filling up (and returning None).
-        let output = buffer.push_back(input).unwrap_or(0.0);
 
         let noise = random::<f32>() / self.signal_to_noise_ratio;
 
