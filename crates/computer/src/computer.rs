@@ -32,7 +32,8 @@ impl Computer {
             return None;
         }
 
-        let maximum_shift = self.output.len().saturating_sub(self.input.len());
+        // +1 needs to be there to cover 0 delay.
+        let maximum_shift = self.output.len().saturating_sub(self.input.len()) + 1;
 
         // Find the phase shift that produced the minimum compound error.
         // TODO: make this code nicer. Unfortunately f32 isn't Ord so we can't use Iterator::min().
@@ -55,7 +56,8 @@ impl Computer {
             }
         }
 
-        Some(maximum_shift - corresponding_phase_shift)
+        // Subtract the +1 we added to maximum_shift above.
+        Some(maximum_shift - corresponding_phase_shift - 1)
     }
 
     pub fn input_buffer(&self) -> &RingBuffer<Sample> {
