@@ -18,6 +18,10 @@ struct VertexOutput {
     @location(0) tex_coords: vec2<f32>,
 }
 
+@group(0)
+@binding(3)
+var<uniform> computed_delay_samples: f32;
+
 @vertex
 fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> VertexOutput {
     var out: VertexOutput;
@@ -40,7 +44,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let hor = textureSample(hor_text, s_diffuse, in.tex_coords.x).r;
     let ver = textureSample(ver_text, s_diffuse, in.tex_coords.y).r;
     let difference = abs(ver - hor);
+    var color = vec3(-log(difference) / 10.0);
 
-    return vec4(vec3(-log(difference) / 10.), 0.);
+    let on_delay_line = abs(in.tex_coords.x - computed_delay_samples) < 0.001;
+
+    if on_delay_line {
+        color.r = 1.0;
+    }
+
+    return vec4(color, 0.0);
 }
  

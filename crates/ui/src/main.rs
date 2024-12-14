@@ -9,8 +9,8 @@ use audio_anemometer::{
 };
 
 use wgpu::{
-    BindGroupDescriptor, BindGroupLayoutDescriptor, BindGroupLayoutEntry, Device, Extent3d,
-    Instance, PrimitiveTopology, ShaderStages, Texture, TextureView,
+    util::DeviceExt, BindGroupDescriptor, BindGroupLayoutDescriptor, BindGroupLayoutEntry, Device,
+    Extent3d, Instance, PrimitiveTopology, ShaderStages, Texture, TextureView,
 };
 use winit::{
     event::{Event, WindowEvent},
@@ -82,6 +82,12 @@ async fn run(event_loop: EventLoop<()>, window: Window, computer: Arc<RwLock<Com
 
     let sampler = device.create_sampler(&Default::default());
 
+    let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Uniform Buffer"),
+        contents: &0.0f32.to_le_bytes(),
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+    });
+
     let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
         label: None,
         entries: &[
@@ -111,6 +117,16 @@ async fn run(event_loop: EventLoop<()>, window: Window, computer: Arc<RwLock<Com
                 ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::NonFiltering),
                 count: None,
             },
+            BindGroupLayoutEntry {
+                binding: 3,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: wgpu::BufferSize::new(4),
+                },
+                count: None,
+            },
         ],
     });
     let bind_group = device.create_bind_group(&BindGroupDescriptor {
@@ -128,6 +144,10 @@ async fn run(event_loop: EventLoop<()>, window: Window, computer: Arc<RwLock<Com
             wgpu::BindGroupEntry {
                 binding: 2,
                 resource: wgpu::BindingResource::Sampler(&sampler),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: uniform_buffer.as_entire_binding(),
             },
         ],
     });
@@ -244,6 +264,10 @@ async fn run(event_loop: EventLoop<()>, window: Window, computer: Arc<RwLock<Com
                     },
                     vertical_texture_size,
                 );
+
+                let delay_samples = computer.delay().unwrap_or(0) as f32;
+                let delay_relative = 1.0 - delay_samples / horizontal_size as f32;
+                queue.write_buffer(&uniform_buffer, 0, &delay_relative.to_le_bytes());
 
                 let frame: wgpu::SurfaceTexture = surface
                     .get_current_texture()
