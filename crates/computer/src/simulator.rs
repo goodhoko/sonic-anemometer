@@ -43,6 +43,21 @@ impl Simulator {
 
         output * self.attenuation + noise
     }
+
+    pub fn delay_samples(&self) -> usize {
+        self.delay_buffer
+            .as_ref()
+            .map_or(0, |buffer| buffer.capacity())
+    }
+
+    pub fn set_delay(&mut self, delay_samples: usize) {
+        match (&mut self.delay_buffer, delay_samples) {
+            (None, 0) => {}
+            (None, _) => self.delay_buffer = Some(RingBuffer::new(delay_samples)),
+            (Some(_), 0) => self.delay_buffer = None,
+            (Some(buffer), _) => buffer.set_capacity(delay_samples),
+        }
+    }
 }
 
 /// Spawn a thread that advances the simulator and the computer.

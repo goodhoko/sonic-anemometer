@@ -11,7 +11,7 @@ pub struct RingBuffer<T> {
 impl<T> RingBuffer<T> {
     /// Construct new RingBuffer with given capacity. Panic when capacity is 0.
     pub fn new(capacity: usize) -> Self {
-        assert!(capacity > 0, "ring buffer must have non-zero length");
+        assert!(capacity > 0, "ring buffer must have non-zero capacity");
 
         Self {
             capacity,
@@ -47,5 +47,19 @@ impl<T> RingBuffer<T> {
 
     pub fn iter(&self) -> std::collections::vec_deque::Iter<'_, T> {
         self.inner.iter()
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.capacity
+    }
+
+    /// Resize the buffer. When downsizing elements may be popped from the front.
+    pub fn set_capacity(&mut self, capacity: usize) {
+        assert!(capacity > 0, "ring buffer must have non-zero capacity");
+
+        self.capacity = capacity;
+        while self.inner.len() > self.capacity {
+            self.inner.pop_front();
+        }
     }
 }

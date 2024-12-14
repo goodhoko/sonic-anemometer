@@ -243,6 +243,16 @@ async fn run(
                     let mut simulator = simulator.write().unwrap();
                     simulator.signal_to_noise_ratio *= 1.1;
                     println!("signal to noise ratio: {}", simulator.signal_to_noise_ratio);
+                } else if pressed_str == "d" {
+                    let mut simulator = simulator.write().unwrap();
+                    let delay = simulator.delay_samples().saturating_add(5);
+                    simulator.set_delay(delay);
+                    println!("delay: {}", delay);
+                } else if pressed_str == "f" {
+                    let mut simulator = simulator.write().unwrap();
+                    let delay = simulator.delay_samples().saturating_sub(5);
+                    simulator.set_delay(delay);
+                    println!("delay: {}", delay);
                 }
             }
             WindowEvent::RedrawRequested => {
