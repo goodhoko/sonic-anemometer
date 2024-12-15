@@ -198,7 +198,7 @@ async fn run(
     surface.configure(&device, &config);
 
     println!("Use keys to tweak simulator params:");
-    println!("A/S to increase/decrease attenuation");
+    println!("A/S to increase/decrease gain");
     println!("D/F to increase/decrease delay");
     println!("N/M to decrease/increase signal to noise ratio");
 
@@ -234,12 +234,12 @@ async fn run(
             } => {
                 if pressed_str == "a" {
                     let mut simulator = simulator.write().unwrap();
-                    simulator.attenuation *= 1.1;
-                    println!("attenuation: {}", simulator.attenuation);
+                    simulator.gain *= 1.1;
+                    println!("gain: {}", simulator.gain);
                 } else if pressed_str == "s" {
                     let mut simulator = simulator.write().unwrap();
-                    simulator.attenuation *= 0.9;
-                    println!("attenuation: {}", simulator.attenuation);
+                    simulator.gain *= 0.9;
+                    println!("gain: {}", simulator.gain);
                 } else if pressed_str == "n" {
                     let mut simulator = simulator.write().unwrap();
                     simulator.signal_to_noise_ratio *= 0.9;
