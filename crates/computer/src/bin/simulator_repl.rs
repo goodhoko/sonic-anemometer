@@ -10,7 +10,7 @@ struct Args {
     #[arg(short, long)]
     delay_samples: usize,
     #[arg(short, long, default_value_t = 1.0)]
-    attenuation: f32,
+    gain: f32,
     #[arg(short, long, default_value_t = f32::MAX)]
     signal_to_noise_ratio: f32,
 }
@@ -18,11 +18,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let mut simulator = Simulator::new(
-        args.delay_samples,
-        args.attenuation,
-        args.signal_to_noise_ratio,
-    );
+    let mut simulator = Simulator::new(args.delay_samples, args.gain, args.signal_to_noise_ratio);
 
     let stdin = io::stdin();
     let mut line = String::new();

@@ -14,7 +14,7 @@ use audio_anemometer::{
 /// compared to the output (as if fed to speakers).
 const DELAY_SAMPLES: usize = 23;
 /// How much does the simulator attenuates the signal. (applied as a multiplier to every sample)
-const ATTENUATION: f32 = 0.5;
+const GAIN: f32 = 0.5;
 /// Signal to noise ratio of the simulated physical system.
 const SIGNAL_TO_NOISE_RATIO: f32 = 5.0;
 
@@ -30,7 +30,7 @@ const MAX_EXPECTED_DELAY_SAMPLES: usize = DELAY_SAMPLES * 2;
 fn main() {
     let simulator = Arc::new(RwLock::new(Simulator::new(
         DELAY_SAMPLES,
-        ATTENUATION,
+        GAIN,
         SIGNAL_TO_NOISE_RATIO,
     )));
     let computer = Arc::new(RwLock::new(Computer::new(

@@ -21,15 +21,14 @@ use winit::{
 const COMPARISON_WINDOW_WIDTH: usize = 1024;
 const MAX_EXPECTED_DELAY_SAMPLES: usize = 2048;
 
-// TODO: make these dynamically changeable by winit key events.
 const DELAY_SAMPLES: usize = 333;
-const ATTENUATION: f32 = 1.0;
+const GAIN: f32 = 1.0;
 const SIGNAL_TO_NOISE_RATIO: f32 = 10.0;
 
 fn main() {
     let simulator = Arc::new(RwLock::new(Simulator::new(
         DELAY_SAMPLES,
-        ATTENUATION,
+        GAIN,
         SIGNAL_TO_NOISE_RATIO,
     )));
     let computer = Arc::new(RwLock::new(Computer::new(
