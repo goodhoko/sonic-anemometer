@@ -43,7 +43,8 @@ var s_diffuse: sampler;
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let hor = textureSample(hor_text, s_diffuse, in.tex_coords.x).r;
     let ver = textureSample(ver_text, s_diffuse, in.tex_coords.y).r;
-    let difference = abs(ver - hor);
+    // The samples are in (-1, 1), hence difference is within (0, 2) but color values fit in (0, 1).
+    let difference = abs(ver - hor) / 2.0;
     var color = vec3(-log(difference) / 10.0);
 
     // TODO: make this line exactly one pixel wide.

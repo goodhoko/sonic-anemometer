@@ -17,7 +17,9 @@ impl Computer {
     }
 
     pub fn output_sample(&mut self) -> Sample {
-        let sample = random();
+        // random() return values in [0, 1) range. Map them to (-1, 1) range, which is valid for
+        // cpal's F32 sample format.
+        let sample = random::<f32>() * 2.0 - 1.0;
         self.output.push_back(sample);
         sample
     }
