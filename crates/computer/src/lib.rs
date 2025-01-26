@@ -1,6 +1,7 @@
 pub mod computer;
+pub mod gui;
+pub mod ring_buffer;
 pub mod simulator;
-
-mod ring_buffer;
+pub mod tui;
 
 pub type Sample = f32;

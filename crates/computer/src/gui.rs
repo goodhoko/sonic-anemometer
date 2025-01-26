@@ -3,10 +3,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use audio_anemometer::{
-    computer::Computer,
-    simulator::{simulate_audio_pipeline, Simulator},
-};
+use crate::{computer::Computer, simulator::Simulator};
 
 use wgpu::{
     util::DeviceExt, BindGroupDescriptor, BindGroupLayoutDescriptor, BindGroupLayoutEntry, Device,
@@ -18,26 +15,7 @@ use winit::{
     window::Window,
 };
 
-const COMPARISON_WINDOW_WIDTH: usize = 1024;
-const MAX_EXPECTED_DELAY_SAMPLES: usize = 2048;
-
-const DELAY_SAMPLES: usize = 333;
-const GAIN: f32 = 1.0;
-const SIGNAL_TO_NOISE_RATIO: f32 = 10.0;
-
-fn main() {
-    let simulator = Arc::new(RwLock::new(Simulator::new(
-        DELAY_SAMPLES,
-        GAIN,
-        SIGNAL_TO_NOISE_RATIO,
-    )));
-    let computer = Arc::new(RwLock::new(Computer::new(
-        MAX_EXPECTED_DELAY_SAMPLES,
-        COMPARISON_WINDOW_WIDTH,
-    )));
-
-    simulate_audio_pipeline(&computer, &simulator);
-
+pub fn run_gui(computer: Arc<RwLock<Computer>>, simulator: Option<Arc<RwLock<Simulator>>>) {
     let event_loop = EventLoop::new().unwrap();
     let window = winit::window::WindowBuilder::new()
         .with_title("Audio-anemometer Visualization")
@@ -52,7 +30,7 @@ async fn run(
     event_loop: EventLoop<()>,
     window: Window,
     computer: Arc<RwLock<Computer>>,
-    simulator: Arc<RwLock<Simulator>>,
+    simulator: Option<Arc<RwLock<Simulator>>>,
 ) {
     let mut size = window.inner_size();
     size.width = size.width.max(1);
@@ -76,11 +54,11 @@ async fn run(
         .await
         .expect("Failed to create device");
 
-    let horizontal_size = MAX_EXPECTED_DELAY_SAMPLES + COMPARISON_WINDOW_WIDTH;
+    let horizontal_size = computer.read().unwrap().output_buffer().capacity();
     let (horizontal_texture, horizontal_texture_size, horizontal_texture_view) =
         get_1d_texture_size_view(&device, horizontal_size);
 
-    let vertical_size = COMPARISON_WINDOW_WIDTH;
+    let vertical_size = computer.read().unwrap().input_buffer().capacity();
     let (vertical_texture, vertical_texture_size, vertical_texture_view) =
         get_1d_texture_size_view(&device, vertical_size);
 
@@ -196,10 +174,12 @@ async fn run(
         .unwrap();
     surface.configure(&device, &config);
 
-    println!("Use keys to tweak simulator params:");
-    println!("A/S to increase/decrease gain");
-    println!("D/F to increase/decrease delay");
-    println!("N/M to decrease/increase signal to noise ratio");
+    if simulator.is_some() {
+        println!("Use keys to tweak simulator params:");
+        println!("A/S to increase/decrease gain");
+        println!("D/F to increase/decrease delay");
+        println!("N/M to decrease/increase signal to noise ratio");
+    }
 
     let window = &window;
     let res = event_loop.run(move |event, target| {
@@ -231,32 +211,34 @@ async fn run(
                     },
                 ..
             } => {
-                if pressed_str == "a" {
-                    let mut simulator = simulator.write().unwrap();
-                    simulator.gain *= 1.1;
-                    println!("gain: {}", simulator.gain);
-                } else if pressed_str == "s" {
-                    let mut simulator = simulator.write().unwrap();
-                    simulator.gain *= 0.9;
-                    println!("gain: {}", simulator.gain);
-                } else if pressed_str == "n" {
-                    let mut simulator = simulator.write().unwrap();
-                    simulator.signal_to_noise_ratio *= 0.9;
-                    println!("signal to noise ratio: {}", simulator.signal_to_noise_ratio);
-                } else if pressed_str == "m" {
-                    let mut simulator = simulator.write().unwrap();
-                    simulator.signal_to_noise_ratio *= 1.1;
-                    println!("signal to noise ratio: {}", simulator.signal_to_noise_ratio);
-                } else if pressed_str == "d" {
-                    let mut simulator = simulator.write().unwrap();
-                    let delay = simulator.delay_samples().saturating_add(5);
-                    simulator.set_delay(delay);
-                    println!("delay: {}", delay);
-                } else if pressed_str == "f" {
-                    let mut simulator = simulator.write().unwrap();
-                    let delay = simulator.delay_samples().saturating_sub(5);
-                    simulator.set_delay(delay);
-                    println!("delay: {}", delay);
+                if let Some(simulator) = simulator.as_ref() {
+                    if pressed_str == "a" {
+                        let mut simulator = simulator.write().unwrap();
+                        simulator.gain *= 1.1;
+                        println!("gain: {}", simulator.gain);
+                    } else if pressed_str == "s" {
+                        let mut simulator = simulator.write().unwrap();
+                        simulator.gain *= 0.9;
+                        println!("gain: {}", simulator.gain);
+                    } else if pressed_str == "n" {
+                        let mut simulator = simulator.write().unwrap();
+                        simulator.signal_to_noise_ratio *= 0.9;
+                        println!("signal to noise ratio: {}", simulator.signal_to_noise_ratio);
+                    } else if pressed_str == "m" {
+                        let mut simulator = simulator.write().unwrap();
+                        simulator.signal_to_noise_ratio *= 1.1;
+                        println!("signal to noise ratio: {}", simulator.signal_to_noise_ratio);
+                    } else if pressed_str == "d" {
+                        let mut simulator = simulator.write().unwrap();
+                        let delay = simulator.delay_samples().saturating_add(5);
+                        simulator.set_delay(delay);
+                        println!("delay: {}", delay);
+                    } else if pressed_str == "f" {
+                        let mut simulator = simulator.write().unwrap();
+                        let delay = simulator.delay_samples().saturating_sub(5);
+                        simulator.set_delay(delay);
+                        println!("delay: {}", delay);
+                    }
                 }
             }
             WindowEvent::RedrawRequested => {

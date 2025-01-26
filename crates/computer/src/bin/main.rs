@@ -1,68 +1,143 @@
 use std::{
-    ops::Deref,
     sync::{Arc, RwLock},
-    thread,
-    time::{Duration, Instant},
+    time::Duration,
 };
 
-use audio_anemometer::{
-    computer::Computer,
-    simulator::{simulate_audio_pipeline, Simulator},
+use audio_anemometer::{computer::Computer, tui::run_tui};
+use color_eyre::eyre::Result;
+use cpal::{
+    traits::{DeviceTrait, HostTrait, StreamTrait},
+    Device, Host, SampleFormat, Stream,
 };
-
-/// By how many samples the simulator delays the produced input (as if coming from microphone)
-/// compared to the output (as if fed to speakers).
-const DELAY_SAMPLES: usize = 23;
-/// How much does the simulator attenuates the signal. (applied as a multiplier to every sample)
-const GAIN: f32 = 0.5;
-/// Signal to noise ratio of the simulated physical system.
-const SIGNAL_TO_NOISE_RATIO: f32 = 5.0;
+use eyre::{eyre, Context};
 
 /// How wide a window to use when searching for the input signal in the output.
-const COMPARISON_WINDOW_WIDTH: usize = 50;
+const COMPARISON_WINDOW_WIDTH: usize = 1024;
 /// For the purpose of the simulation we know this is in fact exactly DELAY_SAMPLES.
 /// In reality though we'll use some heuristic to estimate this based on the physical setup
 /// as well as the delay intrinsic to the digital part of the pipeline.
 /// This controls how long into history of the played output we look to find just received input.
 /// Used as a cap for compute and memory usage.
-const MAX_EXPECTED_DELAY_SAMPLES: usize = DELAY_SAMPLES * 2;
+const MAX_EXPECTED_DELAY_SAMPLES: usize = 2048;
 
-fn main() {
-    let simulator = Arc::new(RwLock::new(Simulator::new(
-        DELAY_SAMPLES,
-        GAIN,
-        SIGNAL_TO_NOISE_RATIO,
-    )));
+fn main() -> Result<()> {
+    color_eyre::install()?;
+
     let computer = Arc::new(RwLock::new(Computer::new(
         MAX_EXPECTED_DELAY_SAMPLES,
         COMPARISON_WINDOW_WIDTH,
     )));
 
-    simulate_audio_pipeline(&computer, &simulator);
+    // Keep the streams running by not dropping them.
+    let _streams = run_real_world_audio(Arc::clone(&computer))?;
 
-    let mut accumulated_delay = 0;
-    let mut delays = 0;
-    let mut last_report = Instant::now();
-    loop {
-        // Computing the delay() is much more expensive than cloning the entire computer.
-        // To lower lock contention, copy a snapshot of the computer to this thread
-        // and immediately release the lock.
-        let computer = computer.read().unwrap().deref().clone();
+    // run_gui(computer, None);
+    run_tui(computer);
+}
 
-        if let Some(delay) = computer.delay() {
-            accumulated_delay += delay;
-            delays += 1;
+fn run_real_world_audio(computer: Arc<RwLock<Computer>>) -> Result<(Stream, Stream)> {
+    let host = cpal::default_host();
 
-            if last_report.elapsed() > Duration::from_secs(1) {
-                let avg = accumulated_delay as f32 / delays as f32;
-                println!("delay {avg} samples (averaged over {delays} computations)");
-                accumulated_delay = 0;
-                delays = 0;
-                last_report = Instant::now();
+    println!("output devices:");
+    host.output_devices()?.for_each(|device| {
+        println!("{}", device.name().as_deref().unwrap_or("no name"));
+    });
+
+    println!("input devices:");
+    host.input_devices()?.for_each(|device| {
+        println!("{}", device.name().as_deref().unwrap_or("no name"));
+    });
+
+    //TODO: support selecting other devices (eg. external speakers/mic)
+    let output_device = host
+        .default_output_device()
+        .ok_or(eyre!("getting default output device"))?;
+
+    let input_device = host
+        .default_input_device()
+        .ok_or(eyre!("getting default input device"))?;
+
+    println!(
+        "choosing {} 🔊 -> 🎤 {}",
+        output_device.name().as_deref().unwrap_or("no name"),
+        input_device.name().as_deref().unwrap_or("no name"),
+    );
+
+    println!("supported output configs:");
+    output_device
+        .supported_output_configs()?
+        .for_each(|config| {
+            println!("{:?}", config);
+        });
+
+    println!("supported input configs:");
+    input_device.supported_input_configs()?.for_each(|config| {
+        println!("{:?}", config);
+    });
+
+    let input_config = input_device.default_input_config()?;
+    let output_config = output_device.default_output_config()?;
+
+    dbg!(&input_config);
+    dbg!(&output_config);
+
+    assert_eq!(input_config.sample_rate(), output_config.sample_rate());
+    assert_eq!(input_config.channels(), 1);
+    assert_eq!(input_config.sample_format(), SampleFormat::F32);
+    assert_eq!(output_config.sample_format(), SampleFormat::F32);
+
+    let computer_for_output = Arc::clone(&computer);
+    let output_channels = output_config.channels() as usize;
+    let output_stream = output_device.build_output_stream(
+        &output_config.into(),
+        move |output: &mut [f32], _info| {
+            let mut computer = computer_for_output.write().unwrap();
+
+            assert_eq!(output.len() % output_channels, 0);
+            output
+                .chunks_exact_mut(output_channels)
+                .for_each(|channels| {
+                    let sample = computer.output_sample();
+                    channels.iter_mut().for_each(|channel| {
+                        *channel = sample;
+                    });
+                });
+        },
+        |err| eprintln!("Error playing audio: {:?}", err),
+        Some(Duration::from_millis(20)),
+    )?;
+
+    let computer_for_input = Arc::clone(&computer);
+    let input_stream = input_device.build_input_stream(
+        &input_config.into(),
+        move |data: &[f32], _info| {
+            // TODO: use info timestamps for more accurate delay measurement.
+
+            let mut computer = computer_for_input.write().unwrap();
+            // Copy data to shared buffer for processing
+            for &sample in data.iter() {
+                computer.record_sample(sample * 100.0);
             }
-        } else {
-            // The computer is not ready yet. Give it some time to accumulate more samples.
-            thread::sleep(Duration::from_millis(100));
-        }
+        },
+        |err| eprintln!("Error capturing audio: {:?}", err),
+        Some(Duration::from_millis(20)),
+    )?;
+
+    output_stream.play()?;
+    input_stream.play()?;
+
+    Ok((output_stream, input_stream))
+}
+
+#[allow(unused)]
+fn get_input_device_or_default(host: &Host, device_name: Option<&str>) -> Result<Device> {
+    if let Some(needle) = device_name {
+        host.input_devices()
+            .wrap_err("listing input devices")?
+            .find(|device| device.name().is_ok_and(|name| name == needle))
+            .ok_or(eyre!("no input device with a name '{needle}'"))
+    } else {
+        host.default_input_device()
+            .ok_or(eyre!("no default input device available"))
     }
 }

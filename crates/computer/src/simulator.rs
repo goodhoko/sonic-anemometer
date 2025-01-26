@@ -61,28 +61,38 @@ impl Simulator {
 
 /// Spawn a thread that advances the simulator and the computer.
 pub fn simulate_audio_pipeline(
-    computer: &Arc<RwLock<Computer>>,
-    simulator: &Arc<RwLock<Simulator>>,
-) {
-    let computer = Arc::clone(computer);
-    let simulator = Arc::clone(simulator);
+    computer: Arc<RwLock<Computer>>,
+    delay_samples: usize,
+    gain: f32,
+    signal_to_noise_ratio: f32,
+) -> Arc<RwLock<Simulator>> {
+    let simulator = Arc::new(RwLock::new(Simulator::new(
+        delay_samples,
+        gain,
+        signal_to_noise_ratio,
+    )));
 
-    thread::spawn(move || {
-        let mut samples = 0;
-        let mut last_report = Instant::now();
-        loop {
-            let output_sample = computer.write().unwrap().output_sample();
-            let input_sample = simulator.write().unwrap().tick(output_sample);
+    {
+        let simulator = Arc::clone(&simulator);
+        thread::spawn(move || {
+            let mut samples = 0;
+            let mut last_report = Instant::now();
+            loop {
+                // TODO: maybe better to lock the computer only once?
+                let output_sample = computer.write().unwrap().output_sample();
+                let input_sample = simulator.write().unwrap().tick(output_sample);
+                computer.write().unwrap().record_sample(input_sample);
 
-            computer.write().unwrap().record_sample(input_sample);
+                samples += 1;
 
-            samples += 1;
-
-            if last_report.elapsed() > Duration::from_secs(1) {
-                println!("processed {samples} samples");
-                samples = 0;
-                last_report = Instant::now();
+                if last_report.elapsed() > Duration::from_secs(1) {
+                    println!("processed {samples} samples");
+                    samples = 0;
+                    last_report = Instant::now();
+                }
             }
-        }
-    });
+        });
+    }
+
+    simulator
 }

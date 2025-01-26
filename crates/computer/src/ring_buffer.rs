@@ -41,6 +41,10 @@ impl<T> RingBuffer<T> {
         self.inner.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
     pub fn is_full(&self) -> bool {
         self.inner.len() == self.capacity
     }
