@@ -1,6 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    sync::{Arc, RwLock},
+    thread::spawn,
+};
 
-use audio_anemometer::{computer::Computer, io::run_real_world_audio, tui::run_tui};
+use audio_anemometer::{computer::Computer, gui::run_gui, io::run_real_world_audio, tui::run_tui};
 use color_eyre::eyre::Result;
 
 /// How wide a window to use when searching for the input signal in the output.
@@ -23,6 +26,10 @@ fn main() -> Result<()> {
     // Keep the streams running by not dropping them.
     let _streams = run_real_world_audio(Arc::clone(&computer))?;
 
-    // run_gui(computer, None);
-    run_tui(computer);
+    let c = Arc::clone(&computer);
+    spawn(|| {
+        run_tui(c);
+    });
+
+    run_gui(computer, None)
 }

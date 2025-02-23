@@ -35,7 +35,5 @@ fn main() -> Result<()> {
     );
 
     // TODO: optionally (based on arguments) run tui instead.
-    run_gui(computer, Some(simulator));
-
-    Ok(())
+    run_gui(computer, Some(simulator))
 }

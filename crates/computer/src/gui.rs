@@ -3,8 +3,9 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use crate::{computer::Computer, simulator::Simulator};
+use eyre::{Context, Ok, Result};
 
+use crate::{computer::Computer, simulator::Simulator};
 use wgpu::{
     util::DeviceExt, BindGroupDescriptor, BindGroupLayoutDescriptor, BindGroupLayoutEntry, Device,
     Extent3d, Instance, PrimitiveTopology, ShaderStages, Texture, TextureView,
@@ -15,15 +16,20 @@ use winit::{
     window::Window,
 };
 
-pub fn run_gui(computer: Arc<RwLock<Computer>>, simulator: Option<Arc<RwLock<Simulator>>>) {
-    let event_loop = EventLoop::new().unwrap();
+pub fn run_gui(
+    computer: Arc<RwLock<Computer>>,
+    simulator: Option<Arc<RwLock<Simulator>>>,
+) -> Result<()> {
+    let event_loop = EventLoop::new().wrap_err("creating event loop<")?;
     let window = winit::window::WindowBuilder::new()
         .with_title("Audio-anemometer Visualization")
         .with_inner_size(winit::dpi::LogicalSize::new(1600, 800))
         .build(&event_loop)
-        .unwrap();
+        .wrap_err("creating GUI window")?;
 
     pollster::block_on(run(event_loop, window, computer, simulator));
+
+    Ok(())
 }
 
 async fn run(
