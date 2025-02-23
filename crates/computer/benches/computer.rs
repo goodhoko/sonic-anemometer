@@ -27,7 +27,7 @@ pub fn single_sample_loopback(c: &mut Criterion) {
 }
 
 pub fn delay(c: &mut Criterion) {
-    c.bench_function("single sample loopback and delay", |b| {
+    c.bench_function("delay", |b| {
         let computer = setup_computer(MAX_EXPECTED_DELAY_SAMPLES, COMPARISON_WINDOW_WIDTH);
 
         b.iter(|| {
