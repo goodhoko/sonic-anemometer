@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use rand::random;
 
 use crate::{ring_buffer::RingBuffer, Sample};
@@ -16,10 +18,13 @@ impl Computer {
         }
     }
 
+    /// Return the next audio sample in cpal's F32 format.
     pub fn output_sample(&mut self) -> Sample {
-        // random() return values in [0, 1) range. Map them to (-1, 1) range, which is valid for
-        // cpal's F32 sample format.
-        let sample = random::<f32>() * 2.0 - 1.0;
+        // TODO: calculate what std would produce RMS equivalent to using uniform distribution
+        // between [-1, 1] we used before.
+        // Gaussian distribution always produces some samples outside any range.
+        // Clamp the few outliers produced from 0.5 STD.
+        let sample = Self::random_number_with_gaussian_distribution(0.5, 0.0).clamp(-1.0, 1.0);
         self.output.push_back(sample);
         sample
     }
@@ -68,5 +73,14 @@ impl Computer {
 
     pub fn output_buffer(&self) -> &RingBuffer<Sample> {
         &self.output
+    }
+
+    // TODO: check correctness
+    fn random_number_with_gaussian_distribution(standard_deviation: f32, mean: f32) -> f32 {
+        let r1 = random::<f32>();
+        let r2 = random::<f32>();
+        let n = (-2.0 * r1.ln()).sqrt() * (2.0 * PI * r2).cos();
+
+        n * standard_deviation + mean
     }
 }
