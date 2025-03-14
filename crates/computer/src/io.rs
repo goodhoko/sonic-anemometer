@@ -6,51 +6,46 @@ use std::{
 use color_eyre::eyre::Result;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    Device, Host, SampleFormat, Stream,
+    SampleFormat, Stream,
 };
-use eyre::{eyre, Context};
+use eyre::{eyre, Context, ContextCompat};
 
 use crate::computer::Computer;
 
-pub fn run_real_world_audio(computer: Arc<RwLock<Computer>>) -> Result<(Stream, Stream)> {
+pub fn run_real_world_audio(
+    computer: Arc<RwLock<Computer>>,
+    input_device_name: Option<String>,
+    output_device_name: Option<String>,
+) -> Result<(Stream, Stream)> {
     let host = cpal::default_host();
 
-    println!("output devices:");
-    host.output_devices()?.for_each(|device| {
-        println!("{}", device.name().as_deref().unwrap_or("no name"));
-    });
+    let output_device = match output_device_name {
+        Some(device_name) => host
+            .output_devices()
+            .wrap_err("listing output devices")?
+            .find(|device| device.name().is_ok_and(|name| name == device_name))
+            .ok_or(eyre!("no output device with a name '{device_name}'"))?,
+        None => host
+            .default_output_device()
+            .wrap_err("getting default output device")?,
+    };
 
-    println!("input devices:");
-    host.input_devices()?.for_each(|device| {
-        println!("{}", device.name().as_deref().unwrap_or("no name"));
-    });
-
-    //TODO: support selecting other devices (eg. external speakers/mic)
-    let output_device = host
-        .default_output_device()
-        .ok_or(eyre!("getting default output device"))?;
-
-    let input_device = host
-        .default_input_device()
-        .ok_or(eyre!("getting default input device"))?;
+    let input_device = match input_device_name {
+        Some(device_name) => host
+            .input_devices()
+            .wrap_err("listing input devices")?
+            .find(|device| device.name().is_ok_and(|name| name == device_name))
+            .ok_or(eyre!("no input device with a name '{device_name}'"))?,
+        None => host
+            .default_input_device()
+            .wrap_err("getting default input device")?,
+    };
 
     println!(
         "choosing {} 🔊 -> 🎤 {}",
         output_device.name().as_deref().unwrap_or("no name"),
         input_device.name().as_deref().unwrap_or("no name"),
     );
-
-    println!("supported output configs:");
-    output_device
-        .supported_output_configs()?
-        .for_each(|config| {
-            println!("{:?}", config);
-        });
-
-    println!("supported input configs:");
-    input_device.supported_input_configs()?.for_each(|config| {
-        println!("{:?}", config);
-    });
 
     let input_config = input_device.default_input_config()?;
     let output_config = output_device.default_output_config()?;
@@ -104,17 +99,4 @@ pub fn run_real_world_audio(computer: Arc<RwLock<Computer>>) -> Result<(Stream, 
     input_stream.play()?;
 
     Ok((output_stream, input_stream))
-}
-
-#[allow(unused)]
-fn get_input_device_or_default(host: &Host, device_name: Option<&str>) -> Result<Device> {
-    if let Some(needle) = device_name {
-        host.input_devices()
-            .wrap_err("listing input devices")?
-            .find(|device| device.name().is_ok_and(|name| name == needle))
-            .ok_or(eyre!("no input device with a name '{needle}'"))
-    } else {
-        host.default_input_device()
-            .ok_or(eyre!("no default input device available"))
-    }
 }

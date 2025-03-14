@@ -25,10 +25,21 @@ const SIMULATED_GAIN: f32 = 1.0;
 /// Signal to noise ratio of the simulated physical system.
 const SIMULATED_SNR: f32 = 5.0;
 
+#[derive(Debug, Clone, clap::Subcommand)]
+enum Command {
+    Simulate,
+    Run {
+        #[arg(long, short)]
+        input_device: Option<String>,
+        #[arg(long, short)]
+        output_device: Option<String>,
+    },
+}
+
 #[derive(Debug, Clone, clap::Parser)]
 struct Args {
-    #[arg(short, long)]
-    simulate_audio: bool,
+    #[command(subcommand)]
+    command: Command,
     #[arg(long)]
     run_gui: bool,
 }
@@ -43,7 +54,7 @@ fn main() -> Result<()> {
         COMPARISON_WINDOW_WIDTH,
     )));
 
-    let simulator = args.simulate_audio.then(|| {
+    let simulator = matches!(args.command, Command::Simulate).then(|| {
         simulate_audio_pipeline(
             Arc::clone(&computer),
             SIMULATED_DELAY_SAMPLES,
@@ -52,9 +63,21 @@ fn main() -> Result<()> {
         )
     });
 
-    // We can't use `else` here because we need to keep the streams alive and running.
-    let _streams = (!args.simulate_audio)
-        .then(|| run_real_world_audio(Arc::clone(&computer)).expect("can spawn audio IO"));
+    // We can't collapse this into a single `match` with the above because we need to keep
+    // _streams alive and running.
+    let _streams = if let Command::Run {
+        input_device,
+        output_device,
+    } = args.command
+    {
+        Some(run_real_world_audio(
+            Arc::clone(&computer),
+            input_device,
+            output_device,
+        )?)
+    } else {
+        None
+    };
 
     if args.run_gui {
         let c = Arc::clone(&computer);

@@ -1,5 +1,5 @@
 - [x] run gui and tui in parallel
-- [ ] add argument parsing to main.rs. Support selecting real-world audio or simulation, optional gui, ...
+- [x] add argument parsing to main.rs. Support selecting real-world audio or simulation, optional gui, ...
 - [ ] add correlation signal visualization
 - [ ] research if timestamps of input and output cpal streams are comparable
 - [ ] try comparing more samples in the self-similarity matrix to highlight the diagonal
