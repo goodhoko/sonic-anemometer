@@ -1,3 +1,5 @@
+use core::f32;
+
 use rand::distributions::Distribution;
 use rand::thread_rng;
 use statrs::distribution::Normal;
@@ -43,23 +45,23 @@ impl Computer {
         // +1 needs to be there to cover 0 delay.
         let maximum_shift = self.output.len().saturating_sub(self.input.len()) + 1;
 
-        // Find the phase shift that produced the minimum compound error.
+        // Find the phase shift that produced the maximum correlation.
         // TODO: make this code nicer. Unfortunately f32 isn't Ord so we can't use Iterator::min().
-        let mut min_error = f32::MAX;
+        let mut max_correlation = f32::MIN;
         let mut corresponding_phase_shift = 0;
 
         for phase_shift_samples in 0..maximum_shift {
             let output_window = self.output.iter().skip(phase_shift_samples);
             let input_window = self.input.iter();
 
-            let error = output_window
+            let correlation = output_window
                 .zip(input_window)
                 .fold(0.0, |acc, (output_sample, input_sample)| {
-                    acc + (output_sample - input_sample).abs()
+                    acc + (output_sample * input_sample)
                 });
 
-            if error < min_error {
-                min_error = error;
+            if correlation > max_correlation {
+                max_correlation = correlation;
                 corresponding_phase_shift = phase_shift_samples;
             }
         }
