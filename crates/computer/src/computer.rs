@@ -36,7 +36,7 @@ impl Computer {
         self.input.push_back(sample);
     }
 
-    pub fn delay(&self) -> Option<usize> {
+    pub fn delay(&self) -> Option<DelayResult> {
         if !self.input.is_full() {
             // We haven't yet accumulated enough input samples. We'll need to wait bit more.
             return None;
@@ -49,6 +49,7 @@ impl Computer {
         // TODO: make this code nicer. Unfortunately f32 isn't Ord so we can't use Iterator::min().
         let mut max_correlation = f32::MIN;
         let mut corresponding_phase_shift = 0;
+        let mut cross_correlation = Vec::new();
 
         for phase_shift_samples in 0..maximum_shift {
             let output_window = self.output.iter().skip(phase_shift_samples);
@@ -60,14 +61,19 @@ impl Computer {
                     acc + (output_sample * input_sample)
                 });
 
+            cross_correlation.push(correlation);
+
             if correlation > max_correlation {
                 max_correlation = correlation;
                 corresponding_phase_shift = phase_shift_samples;
             }
         }
 
-        // Subtract the +1 we added to maximum_shift above.
-        Some(maximum_shift - corresponding_phase_shift - 1)
+        Some(DelayResult {
+            // Subtract the +1 we added to maximum_shift above.
+            delay_samples: maximum_shift - corresponding_phase_shift - 1,
+            cross_correlation,
+        })
     }
 
     pub fn input_buffer(&self) -> &RingBuffer<Sample> {
@@ -77,4 +83,9 @@ impl Computer {
     pub fn output_buffer(&self) -> &RingBuffer<Sample> {
         &self.output
     }
+}
+
+pub struct DelayResult {
+    pub delay_samples: usize,
+    pub cross_correlation: Vec<Sample>,
 }

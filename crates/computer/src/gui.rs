@@ -298,7 +298,8 @@ async fn run(
                     vertical_texture_size,
                 );
 
-                let delay_samples = computer.delay().unwrap_or(0) as f32;
+                let delay_samples =
+                    computer.delay().map(|res| res.delay_samples).unwrap_or(0) as f32;
                 let delay_relative = 1.0 - delay_samples / horizontal_size as f32;
                 queue.write_buffer(&uniform_buffer, 0, &delay_relative.to_le_bytes());
 

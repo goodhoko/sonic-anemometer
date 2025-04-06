@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::computer::Computer;
+use crate::computer::{Computer, DelayResult};
 
 pub fn run_tui(computer: Arc<RwLock<Computer>>) -> ! {
     let mut measurements = Vec::new();
@@ -17,8 +17,8 @@ pub fn run_tui(computer: Arc<RwLock<Computer>>) -> ! {
         // and immediately release the lock.
         let computer = computer.read().unwrap().deref().clone();
 
-        if let Some(delay) = computer.delay() {
-            measurements.push(delay);
+        if let Some(DelayResult { delay_samples, .. }) = computer.delay() {
+            measurements.push(delay_samples);
 
             if last_report.elapsed() > Duration::from_secs(1) {
                 let avg = measurements.iter().sum::<usize>() as f64 / measurements.len() as f64;
